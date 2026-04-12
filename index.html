@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>דמי כיס - הקופה שלי</title>
+    <title>דמי כיס - הקופה שלי</title>
   <meta name="theme-color" content="#4F46E5" />
   
   <script>
@@ -354,7 +353,7 @@
           const isNowCompleted = !task.completed;
           await db.doc(`artifacts/${appId}/public/data/tasks/${task.id}`).update({ completed: isNowCompleted });
           const profileName = activeProfile ? activeProfile.name : '';
-          if (isNowCompleted) notify(`${profileName} סיים/ה את המשימה "${task.title}" וממתין/ה לאישור!`, 'parent');
+          if (isNowCompleted) notify(`${profileName} סיימה את המשימה "${task.title}" וממתינה לאישור!`, 'parent');
         } catch (error) { showToast("שגיאה בעדכון", "error"); }
       };
 
@@ -368,7 +367,7 @@
           
           if (!task.approved) {
             await profileRef.update({ balance: activeProfile.balance + task.reward });
-            notify(`איזה יופי! המשימה "${task.title}" אושרה וקיבלתם ₪${task.reward}!`, task.childId);
+            notify(`איזה יופי! המשימה "${task.title}" אושרה וקיבלת ₪${task.reward}!`, task.childId);
             if (task.isRecurring) {
               await taskRef.update({ completed: false, approved: false });
               showToast(`שולם ₪${task.reward} והמשימה התאפסה!`);
@@ -422,7 +421,7 @@
 
                 {activeProfileId && (
                   <div className={`hidden sm:flex p-1 rounded-xl ml-2 ${highContrast ? 'border border-yellow-400' : 'bg-gray-100 dark:bg-slate-800'}`}>
-                    <button onClick={() => setViewMode('child')} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all ${viewMode === 'child' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>תצוגת ילד/ה</button>
+                    <button onClick={() => setViewMode('child')} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all ${viewMode === 'child' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>תצוגת ילדה</button>
                     <button onClick={handleParentModeRequest} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all flex items-center gap-1 ${viewMode === 'parent' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>
                       תצוגת הורה {viewMode === 'child' && <Lock size={12} />}
                     </button>
@@ -514,38 +513,36 @@
                     </div>
                     <div>
                       <h1 className="text-3xl font-black mb-1">היי {activeProfile ? activeProfile.name : ''}!</h1>
-                      {viewMode === 'child' && <p className="opacity-75 font-medium mb-1">בא לכם/ן להרוויח קצת דמי כיס?</p>}
+                      {viewMode === 'child' && <p className="opacity-75 font-medium mb-1">בא לך להרוויח קצת דמי כיס?</p>}
                       
-                      {/* תפריט החלפת פרופילים מהיר */}
                       <div className="flex flex-wrap items-center gap-2 mt-2 justify-center md:justify-start">
-                        <button onClick={() => setActiveProfileId(null)} className={`text-sm font-bold flex items-center gap-1 transition-colors ${highContrast ? 'text-yellow-400 hover:underline' : 'text-indigo-600 hover:text-indigo-800 dark:text-indigo-400'}`}>
+                        <button onClick={() => setActiveProfileId(null)} className={`text-sm font-bold flex items-center gap-1 transition-colors ${highContrast ? 'text-yellow-400 hover:underline' : 'text-indigo-600 hover:text-indigo-800'}`}>
                           <Users size={16}/> תפריט ראשי
                         </button>
                         
                         <div className={`hidden sm:flex items-center gap-2 mr-2 pr-2 border-r-2 ${highContrast ? 'border-yellow-400/30' : 'border-indigo-100 dark:border-slate-700'}`}>
                           {profiles.filter(p => p.id !== activeProfileId).map(p => (
-                            <button key={p.id} onClick={() => setActiveProfileId(p.id)} className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors hover:scale-105 ${highContrast ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-indigo-200 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
+                            <button key={p.id} onClick={() => setActiveProfileId(p.id)} className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors hover:scale-105 ${highContrast ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-indigo-200 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100'}`}>
                               {p.name}
                             </button>
                           ))}
                           {viewMode === 'parent' && (
-                            <button onClick={() => openModal('addChild')} className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors hover:scale-105 ${highContrast ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-none hover:bg-indigo-700'}`}>
+                            <button onClick={() => openModal('addChild')} className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors hover:scale-105 ${highContrast ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'}`}>
                               <Plus size={14}/> פרופיל נוסף
                             </button>
                           )}
                         </div>
                       </div>
 
-                      {/* תפריט מהיר לנייד */}
                       <div className={`flex sm:hidden flex-wrap items-center gap-2 mt-3 justify-center w-full`}>
                           {profiles.filter(p => p.id !== activeProfileId).map(p => (
-                            <button key={p.id} onClick={() => setActiveProfileId(p.id)} className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${highContrast ? 'border-yellow-400 text-yellow-400' : 'border-indigo-200 text-indigo-600 bg-indigo-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                            <button key={p.id} onClick={() => setActiveProfileId(p.id)} className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${highContrast ? 'border-yellow-400 text-yellow-400' : 'border-indigo-200 text-indigo-600 bg-indigo-50'}`}>
                               {p.name}
                             </button>
                           ))}
                           {viewMode === 'parent' && (
                             <button onClick={() => openModal('addChild')} className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 ${highContrast ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white'}`}>
-                              <Plus size={14}/> פרופיל נוסף
+                              <Plus size={14}/> נוסף
                             </button>
                           )}
                       </div>
@@ -662,7 +659,6 @@
             </main>
           )}
 
-          {/* מודלים קופצים */}
           {modalConfig && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalConfig(null)}></div>
