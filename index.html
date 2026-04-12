@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon.svg" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="דמי כיס" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>דמי כיס - הקופה שלי</title>
+  <title>דמי כיס - הקופה שלי</title>
   <meta name="theme-color" content="#4F46E5" />
+  
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
@@ -47,7 +47,7 @@
   </div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = window.React;
+    const { useState, useEffect, useMemo, useRef } = window.React;
     const { createRoot } = window.ReactDOM;
 
     const firebaseConfig = {
@@ -78,7 +78,6 @@
     const ShieldCheck = (p) => <Icon name="fas fa-shield-alt" {...p} />;
     const Sun = (p) => <Icon name="fas fa-sun" {...p} />;
     const Moon = (p) => <Icon name="fas fa-moon" {...p} />;
-    const Info = (p) => <Icon name="fas fa-info-circle" {...p} />;
     const CheckCircle2 = (p) => <Icon name="fas fa-check-circle" {...p} />;
     const Circle = (p) => <Icon name="far fa-circle" {...p} />;
     const Trash2 = (p) => <Icon name="fas fa-trash-alt" {...p} />;
@@ -114,8 +113,12 @@
       const [allTasks, setAllTasks] = useState([]);
       const [allGoals, setAllGoals] = useState([]);
       const [allNotifications, setAllNotifications] = useState([]);
-      const [activeProfileId, setActiveProfileId] = useState(null);
       const [securitySettings, setSecuritySettings] = useState({});
+      
+      // משיכת הפרופיל השמור מהזיכרון של הטלפון
+      const [activeProfileId, setActiveProfileId] = useState(() => {
+        return localStorage.getItem('pocketMoneyActiveProfile') || null;
+      });
       
       const [isReady, setIsReady] = useState(false);
       const [toast, setToast] = useState({ message: '', type: '' });
@@ -131,20 +134,46 @@
       const [isAccessMenuOpen, setIsAccessMenuOpen] = useState(false);
       const [viewMode, setViewMode] = useState('child'); 
 
+      const notifiedIds = useRef(new Set());
+      const [pushEnabled, setPushEnabled] = useState(false);
+
       const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast({ message: '', type: '' }), 4000);
       };
 
+      // מנגנון הזיכרון החכם של קוד המשפחה
       useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        let fid = urlParams.get('familyId');
-        if (!fid) {
-          fid = Math.random().toString(36).substring(2, 8).toUpperCase();
-          try { window.history.replaceState(null, '', '?familyId=' + fid); } catch (e) {}
+        const fidFromUrl = urlParams.get('familyId');
+        const fidFromStorage = localStorage.getItem('pocketMoneyFamilyId');
+        
+        // עדיפות 1: קישור חדש שקיבלנו. עדיפות 2: מה ששמור בזיכרון.
+        let finalFid = fidFromUrl || fidFromStorage;
+        
+        if (!finalFid) {
+          finalFid = Math.random().toString(36).substring(2, 8).toUpperCase();
         }
-        setFamilyId(fid);
+
+        // שמירה לזיכרון של הטלפון
+        localStorage.setItem('pocketMoneyFamilyId', finalFid);
+        
+        try { window.history.replaceState(null, '', '?familyId=' + finalFid); } catch (e) {}
+        setFamilyId(finalFid);
+
+        if ('Notification' in window) {
+          setPushEnabled(Notification.permission === 'granted');
+        }
       }, []);
+
+      // שומר את הפרופיל הפעיל לזיכרון בכל פעם שמחליפים ילד
+      useEffect(() => {
+        if (activeProfileId) {
+          localStorage.setItem('pocketMoneyActiveProfile', activeProfileId);
+        } else {
+          localStorage.removeItem('pocketMoneyActiveProfile');
+        }
+      }, [activeProfileId]);
 
       useEffect(() => {
         const initAuth = async () => {
@@ -213,6 +242,40 @@
       );
       const unreadCount = useMemo(() => myNotifications.filter(n => !n.isRead).length, [myNotifications]);
 
+      // רדאר ההתראות הקופצות
+      useEffect(() => {
+        if (pushEnabled && myNotifications.length > 0) {
+          myNotifications.forEach(n => {
+            if (!n.isRead && !notifiedIds.current.has(n.id)) {
+              notifiedIds.current.add(n.id);
+              if (Date.now() - n.createdAt < 15000) {
+                try {
+                  new Notification('דמי כיס', { body: n.text, icon: 'icon.svg', dir: 'rtl' });
+                } catch (e) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('דמי כיס', { body: n.text, icon: 'icon.svg', dir: 'rtl' });
+                  });
+                }
+              }
+            }
+          });
+        }
+      }, [myNotifications, pushEnabled]);
+
+      const requestPushPermission = async () => {
+        if (!('Notification' in window)) {
+          showToast("הדפדפן לא תומך בהתראות", "error");
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        setPushEnabled(permission === 'granted');
+        if (permission === 'granted') {
+          showToast("התראות קופצות הופעלו בהצלחה!");
+        } else {
+          showToast("התראות נחסמו. יש לאשר בהגדרות הטלפון.", "error");
+        }
+      };
+
       const notify = async (text, target) => {
         if (!user || !familyId) return;
         await db.collection(`artifacts/${appId}/public/data/notifications`).add({
@@ -271,6 +334,12 @@
             const code = input1.toUpperCase();
             if (!code || code.length < 3) return showToast("אנא הזינו קוד תקין", "error");
             setModalConfig(null); 
+            
+            // מוחק פרופיל ישן ושומר את המשפחה החדשה בזיכרון
+            localStorage.setItem('pocketMoneyFamilyId', code);
+            localStorage.removeItem('pocketMoneyActiveProfile');
+            setActiveProfileId(null);
+            
             setFamilyId(code);
             try { window.history.replaceState(null, '', '?familyId=' + code); } catch (e) {}
             showToast("מתחבר למשפחה...", "success");
@@ -446,7 +515,8 @@
             </div>
           </nav>
 
-          {!activeProfileId ? (
+          {/* וידוא שהפרופיל הפעיל באמת קיים במשפחה, אחרת מציג את מסך הבחירה */}
+          {!activeProfileId || !activeProfile ? (
             <div className="flex items-center justify-center p-4 mt-12 relative">
               <div className={`max-w-md w-full rounded-[2.5rem] p-8 shadow-2xl text-center relative z-10 ${highContrast ? 'border-2 border-yellow-400 bg-black' : isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'}`}>
                 <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-lg ${highContrast ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white shadow-indigo-200'}`}>
@@ -499,11 +569,16 @@
                         </button>
                       ))}
                     </div>
-                    {viewMode === 'parent' && (
-                      <button onClick={() => openModal('addChild')} className={`w-full min-h-[54px] font-bold flex items-center justify-center gap-2 border-2 border-dashed rounded-2xl transition-all ${highContrast ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-indigo-300 text-indigo-600 hover:bg-indigo-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
-                        <UserPlus size={20} /> הוספת פרופיל
+                    <div className="flex flex-col gap-3">
+                      {viewMode === 'parent' && (
+                        <button onClick={() => openModal('addChild')} className={`w-full min-h-[54px] font-bold flex items-center justify-center gap-2 border-2 border-dashed rounded-2xl transition-all ${highContrast ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-indigo-300 text-indigo-600 hover:bg-indigo-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
+                          <UserPlus size={20} /> הוספת פרופיל
+                        </button>
+                      )}
+                      <button onClick={() => openModal('joinFamily')} className={`w-full min-h-[54px] font-bold flex items-center justify-center gap-2 border-2 transition-all rounded-2xl ${highContrast ? 'border-gray-600 text-gray-400' : 'border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
+                        <Users size={20} /> החלפת קוד משפחה
                       </button>
-                    )}
+                    </div>
                   </>
                 )}
               </div>
@@ -664,6 +739,7 @@
             </main>
           )}
 
+          {/* מודלים קופצים */}
           {modalConfig && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalConfig(null)}></div>
@@ -673,13 +749,13 @@
                   <form onSubmit={(e) => { e.preventDefault(); executeModalAction(); }}>
                     <div className="text-center mb-6">
                       <Users size={48} className={`mx-auto mb-4 ${highContrast ? 'text-yellow-400' : 'text-indigo-600'}`} />
-                      <h3 className="text-xl font-black mb-2">הצטרפות למשפחה</h3>
+                      <h3 className="text-xl font-black mb-2">קוד משפחה</h3>
                       <p className="text-sm opacity-80">בקשו מאחד ההורים את קוד המשפחה (מופיע במסך הראשי) והזינו אותו כאן.</p>
                     </div>
                     <input autoFocus required type="text" placeholder="לדוגמה: A1B2C3" value={modalInput1} onChange={e => setModalInput1(e.target.value)} className={modalInputClass} />
                     <div className="flex gap-3 mt-6">
                       <button type="button" onClick={() => setModalConfig(null)} className={modalCancelBtn}>ביטול</button>
-                      <button type="submit" className={modalSubmitBtn}>הצטרפות</button>
+                      <button type="submit" className={modalSubmitBtn}>התחברות</button>
                     </div>
                   </form>
                 )}
@@ -797,7 +873,18 @@
                   <h2 className="text-2xl font-black flex items-center gap-3"><Accessibility size={28} className={highContrast ? 'text-yellow-400' : 'text-indigo-600'} /> הגדרות נגישות</h2>
                   <button onClick={() => setIsAccessMenuOpen(false)} className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full ${highContrast ? 'border border-yellow-400' : 'bg-gray-100 dark:bg-slate-700'}`}><X size={24} /></button>
                 </div>
-                <div className="space-y-8">
+                <div className="space-y-6">
+                  
+                  <div className={`flex justify-between items-center p-5 rounded-2xl border-2 ${highContrast ? 'border-yellow-400' : 'border-gray-200 dark:border-slate-700'}`}>
+                    <div>
+                      <p className="font-bold text-lg">התראות קופצות (Push)</p>
+                      <p className="text-sm opacity-75">קבלו התראה לטלפון על משימות</p>
+                    </div>
+                    <button onClick={requestPushPermission} className={`px-4 py-2 rounded-xl font-bold transition-colors ${pushEnabled ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 dark:bg-slate-600 dark:text-gray-200'}`}>
+                      {pushEnabled ? 'מופעל' : 'הפעלה'}
+                    </button>
+                  </div>
+
                   <div>
                     <p className="font-bold mb-3 text-lg">גודל טקסט</p>
                     <div className="flex gap-3">
@@ -851,12 +938,13 @@
     const root = createRoot(rootElement);
     root.render(<App />);
   </script>
+  
   <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(console.error);
-    });
-  }
-</script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => console.log('SW setup pending'));
+      });
+    }
+  </script>
 </body>
 </html>
