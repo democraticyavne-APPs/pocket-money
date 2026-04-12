@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#4F46E5"/>
+  <path d="M416 192H128C110.3 192 96 206.3 96 224V384C96 401.7 110.3 416 128 416H416C433.7 416 448 401.7 448 384V224C448 206.3 433.7 192 416 192Z" fill="white"/>
+  <path d="M96 256H448" stroke="#4F46E5" stroke-width="16"/>
+  <circle cx="272" cy="256" r="56" fill="#FCD34D"/>
+  <text x="272" y="276" font-family="Arial" font-weight="bold" font-size="56" text-anchor="middle" fill="#B45309">₪</text>
+</svg>
