@@ -16,13 +16,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <script crossorigin="anonymous" src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.0/babel.min.js"></script>
 
-  <script crossorigin="anonymous" src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-  <script crossorigin="anonymous" src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-  <script crossorigin="anonymous" src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.1/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.1/firebase-firestore-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.1/firebase-auth-compat.min.js"></script>
 
   <style>
     body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -143,7 +143,7 @@
       useEffect(() => {
         const initAuth = async () => {
           try { await auth.signInAnonymously(); } 
-          catch (error) { showToast("שגיאת התחברות", "error"); setIsReady(true); }
+          catch (error) { showToast("שגיאת התחברות לחשבון", "error"); setIsReady(true); }
         };
         initAuth();
         
@@ -223,8 +223,9 @@
         let currentUrl = window.location.href;
         const url = new URL(currentUrl);
         url.searchParams.set('familyId', familyId);
-        const linkToCopy = url.toString();
-        const shareText = `הצטרפו אליי לאפליקציית דמי כיס! 💸\nקוד המשפחה שלנו הוא: ${familyId}\n\nלכניסה ישירה לחצו כאן:\n${linkToCopy}`;
+        currentUrl = url.toString();
+        
+        const shareText = `הצטרפו אליי לאפליקציית דמי כיס! 💸\nקוד המשפחה שלנו הוא: ${familyId}\n\nלכניסה ישירה לחצו כאן:\n${currentUrl}`;
         
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -340,7 +341,7 @@
         } catch (error) {
           console.error(error);
           setModalConfig(null); 
-          showToast("שגיאת הרשאות. ודאו שהחוקים פתוחים.", "error");
+          showToast("שגיאת הרשאות בענן.", "error");
         }
       };
 
@@ -405,6 +406,7 @@
               </div>
 
               <div className="flex items-center gap-2">
+
                 {activeProfileId && (
                   <button onClick={() => { openModal('notifications'); markNotificationsAsRead(); }} className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors">
                     <Bell size={24} className={highContrast ? 'text-yellow-400' : 'text-indigo-600'} />
@@ -418,7 +420,7 @@
 
                 {activeProfileId && (
                   <div className={`hidden sm:flex p-1 rounded-xl ml-2 ${highContrast ? 'border border-yellow-400' : 'bg-gray-100 dark:bg-slate-800'}`}>
-                    <button onClick={() => setViewMode('child')} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all ${viewMode === 'child' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>תצוגת ילד/ה</button>
+                    <button onClick={() => setViewMode('child')} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all ${viewMode === 'child' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>תצוגת ילד</button>
                     <button onClick={handleParentModeRequest} className={`min-h-[44px] px-4 rounded-lg font-bold transition-all flex items-center gap-1 ${viewMode === 'parent' ? (highContrast ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600') : 'text-gray-500'}`}>
                       תצוגת הורה {viewMode === 'child' && <Lock size={12} />}
                     </button>
@@ -785,7 +787,7 @@
             <div className={`md:hidden fixed bottom-0 left-0 right-0 p-3 border-t backdrop-blur-lg pb-safe flex justify-around items-center z-30 ${highContrast ? 'bg-black border-yellow-400' : isDarkMode ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-gray-200'}`}>
               <button onClick={() => setViewMode('child')} className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-1 ${viewMode === 'child' ? (highContrast ? 'text-yellow-400' : 'text-indigo-600') : 'text-gray-400'}`}>
                 <UserCircle size={24} />
-                <span className="text-[10px] font-bold">תצוגת ילד/ה</span>
+                <span className="text-[10px] font-bold">תצוגת ילדה</span>
               </button>
               <button onClick={() => { openModal('notifications'); markNotificationsAsRead(); }} className={`relative flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-1 text-gray-400`}>
                 <div className="relative">
@@ -809,7 +811,7 @@
 
     const rootElement = document.getElementById('root');
     rootElement.innerHTML = '';
-    const root = createRoot(rootElement);
+    const root = ReactDOM.createRoot(rootElement);
     root.render(<App />);
   </script>
 </body>
